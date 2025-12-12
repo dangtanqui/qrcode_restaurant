@@ -185,8 +185,17 @@ magick -version
    ```bash
    rails active_storage:install
    rails db:migrate
-   mkdir -p storage
    ```
+   
+   **Create storage directory:**
+   - *Windows (PowerShell):*
+     ```powershell
+     New-Item -ItemType Directory -Force -Path storage
+     ```
+   - *Linux/Mac:*
+     ```bash
+     mkdir -p storage
+     ```
 
 6. **Start the Rails server:**
    ```bash
