@@ -1,10 +1,10 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.2.9'
+ruby '3.2.6'
 
 gem 'rails', '~> 7.1.0'
-gem 'pg', '~> 1.5'
+gem 'mysql2', '~> 0.5'
 gem 'puma', '~> 6.0'
 gem 'bcrypt', '~> 3.1.7'
 gem 'jwt'
@@ -14,6 +14,7 @@ gem 'image_processing', '~> 1.2'
 
 group :development, :test do
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
+  gem 'dotenv-rails'
 end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem

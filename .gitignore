@@ -10,6 +10,7 @@ backend/storage/*
 !backend/storage/.keep
 backend/config/master.key
 backend/.env
+backend/.env.local
 
 # Frontend
 frontend/node_modules

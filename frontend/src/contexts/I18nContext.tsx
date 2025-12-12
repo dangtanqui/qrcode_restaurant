@@ -38,6 +38,10 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.creatingAccount': 'Đang tạo tài khoản...',
     'auth.invalidResponse': 'Phản hồi không hợp lệ từ server',
     'auth.loginFailed': 'Đăng nhập thất bại',
+    'auth.invalidCredentials': 'Email hoặc mật khẩu không đúng',
+    'auth.emailRequired': 'Vui lòng nhập email',
+    'auth.passwordRequired': 'Vui lòng nhập mật khẩu',
+    'auth.invalidEmailFormat': 'Email không đúng định dạng',
     'auth.signupFailed': 'Đăng ký thất bại',
     'auth.passwordsNotMatch': 'Mật khẩu không khớp',
     
@@ -116,6 +120,10 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.creatingAccount': 'Creating account...',
     'auth.invalidResponse': 'Invalid response from server',
     'auth.loginFailed': 'Login failed',
+    'auth.invalidCredentials': 'Invalid email or password',
+    'auth.emailRequired': 'Please enter your email',
+    'auth.passwordRequired': 'Please enter your password',
+    'auth.invalidEmailFormat': 'Invalid email format',
     'auth.signupFailed': 'Signup failed',
     'auth.passwordsNotMatch': 'Passwords do not match',
     

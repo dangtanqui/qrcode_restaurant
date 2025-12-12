@@ -1,31 +1,31 @@
 default: &default
-  adapter: postgresql
-  encoding: unicode
+  adapter: mysql2
+  encoding: utf8mb4
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
 
 development:
   <<: *default
   database: menu_api_development
-  username: postgres
-  password: 123456
-  host: localhost
-  port: 5432
+  username: root
+  password: <%= ENV['DATABASE_PASSWORD'] || '' %>
+  host: 127.0.0.1
+  port: <%= ENV['DATABASE_PORT'] || 3306 %>
 
 test:
   <<: *default
   database: menu_api_test
-  username: postgres
-  password: 123456
-  host: localhost
-  port: 5432
+  username: root
+  password: <%= ENV['DATABASE_PASSWORD'] || '' %>
+  host: 127.0.0.1
+  port: <%= ENV['DATABASE_PORT'] || 3306 %>
 
 production:
   <<: *default
   database: menu_api_production
-  username: <%= ENV['DATABASE_USERNAME'] || 'postgres' %>
-  password: <%= ENV['DATABASE_PASSWORD'] || '123456' %>
-  host: <%= ENV['DATABASE_HOST'] || 'localhost' %>
-  port: <%= ENV['DATABASE_PORT'] || 5432 %>
+  username: <%= ENV['DATABASE_USERNAME'] || 'root' %>
+  password: <%= ENV['DATABASE_PASSWORD'] || '' %>
+  host: <%= ENV['DATABASE_HOST'] || '127.0.0.1' %>
+  port: <%= ENV['DATABASE_PORT'] || 3306 %>
 
 
 

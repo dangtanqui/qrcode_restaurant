@@ -26,14 +26,8 @@ export const authApi = {
   },
   
   login: async (data: LoginData): Promise<AuthResponse> => {
-    try {
-      const response = await apiClient.post<AuthResponse>('/login', data)
-      console.log('Login response:', response.data)
-      return response.data
-    } catch (error: any) {
-      console.error('Login API error:', error)
-      throw error
-    }
+    const response = await apiClient.post<AuthResponse>('/login', data)
+    return response.data
   },
 }
 

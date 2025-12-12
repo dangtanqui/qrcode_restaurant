@@ -11,10 +11,7 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[7.1].define(version: 2025_12_11_152022) do
-  # These are extensions that must be enabled in order to support this database
-  enable_extension "plpgsql"
-
-  create_table "active_storage_attachments", force: :cascade do |t|
+  create_table "active_storage_attachments", charset: "utf8mb4", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
     t.bigint "record_id", null: false
@@ -24,7 +21,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_11_152022) do
     t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
   end
 
-  create_table "active_storage_blobs", force: :cascade do |t|
+  create_table "active_storage_blobs", charset: "utf8mb4", force: :cascade do |t|
     t.string "key", null: false
     t.string "filename", null: false
     t.string "content_type"
@@ -36,13 +33,13 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_11_152022) do
     t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
   end
 
-  create_table "active_storage_variant_records", force: :cascade do |t|
+  create_table "active_storage_variant_records", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
-  create_table "categories", force: :cascade do |t|
+  create_table "categories", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "menu_id", null: false
     t.string "name", null: false
     t.integer "position", default: 0
@@ -51,7 +48,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_11_152022) do
     t.index ["menu_id"], name: "index_categories_on_menu_id"
   end
 
-  create_table "items", force: :cascade do |t|
+  create_table "items", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "category_id", null: false
     t.string "name", null: false
     t.decimal "price", precision: 10, scale: 2, null: false
@@ -63,14 +60,14 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_11_152022) do
     t.index ["category_id"], name: "index_items_on_category_id"
   end
 
-  create_table "menus", force: :cascade do |t|
+  create_table "menus", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "restaurant_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["restaurant_id"], name: "index_menus_on_restaurant_id"
   end
 
-  create_table "order_items", force: :cascade do |t|
+  create_table "order_items", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "order_id", null: false
     t.bigint "item_id", null: false
     t.integer "quantity", default: 1
@@ -81,7 +78,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_11_152022) do
     t.index ["order_id"], name: "index_order_items_on_order_id"
   end
 
-  create_table "orders", force: :cascade do |t|
+  create_table "orders", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "restaurant_id", null: false
     t.string "table_number"
     t.string "status", default: "pending"
@@ -94,7 +91,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_11_152022) do
     t.index ["status"], name: "index_orders_on_status"
   end
 
-  create_table "restaurants", force: :cascade do |t|
+  create_table "restaurants", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "name", null: false
     t.string "address", null: false
@@ -107,7 +104,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_11_152022) do
     t.index ["user_id"], name: "index_restaurants_on_user_id"
   end
 
-  create_table "users", force: :cascade do |t|
+  create_table "users", charset: "utf8mb4", force: :cascade do |t|
     t.string "email", null: false
     t.string "password_digest", null: false
     t.datetime "created_at", null: false

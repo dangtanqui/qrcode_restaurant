@@ -15,15 +15,18 @@ A full-stack menu management application built with Ruby on Rails API backend an
 ### Prerequisites
 
 - **Ruby 3.2+** and **Rails 7.1+**
-- **PostgreSQL** (installed and running)
-- **Node.js 18+** and **npm/yarn**
+- **MySQL 5.7.41** (installed and running, or use Podman)
+- **Node.js 18+** and **npm/yarn** (⚠️ **Required**: Node.js 18+ is mandatory for Vite 4.5+)
 - **ImageMagick** (for ActiveStorage image processing)
+- **Podman** (optional, for running MySQL in a container)
 
 ### Installation
 
 #### Install Prerequisites (if needed)
 
-**Ruby on Windows:**
+**Ruby:**
+
+*Windows:*
 1. Download Ruby+Devkit 3.2.x from [rubyinstaller.org](https://rubyinstaller.org/downloads/)
 2. Install with "Add Ruby executables to your PATH" checked
 3. Open a new PowerShell and run:
@@ -33,7 +36,18 @@ A full-stack menu management application built with Ruby on Rails API backend an
    rails -v
    ```
 
-**Node.js on Windows:**
+*Ubuntu:*
+```bash
+sudo apt update
+sudo apt install ruby-full build-essential -y
+ruby -v
+gem install rails
+rails -v
+```
+
+**Node.js:**
+
+*Windows:*
 1. Download Node.js LTS from [nodejs.org](https://nodejs.org/)
 2. Install with "Add to PATH" checked
 3. Open a new PowerShell and run:
@@ -42,15 +56,92 @@ A full-stack menu management application built with Ruby on Rails API backend an
    npm -v
    ```
 
-**PostgreSQL on Windows:**
-1. Download PostgreSQL 15 or 16 from [postgresql.org](https://www.postgresql.org/download/windows/)
-2. Install with "Command Line Tools" selected
-3. Set password for postgres user
-4. Open a new PowerShell and run:
+*Ubuntu:*
+```bash
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+node -v
+npm -v
+```
+
+**MySQL:**
+
+> **Recommended:** Use MySQL 5.7.41 for best compatibility. You can install it directly or use Podman.
+
+*Option 1: Using Podman (Recommended)*
+
+Run MySQL 5.7.41 in a Podman container:
+```bash
+podman run -d --name=menu_api_development -p 3308:3306 -e MYSQL_ALLOW_EMPTY_PASSWORD=yes docker.io/library/mysql:5.7.41 --sql-mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
+```
+
+This will:
+- Create a MySQL 5.7.41 container named `menu_api_development`
+- Map container port 3306 to host port 3308
+- Allow empty password (no password required for root user)
+
+To stop the container:
+```bash
+podman stop menu_api_development
+```
+
+To start it again:
+```bash
+podman start menu_api_development
+```
+
+*Option 2: Direct Installation*
+
+*Windows:*
+1. Download MySQL 5.7.41 from [MySQL Archives](https://downloads.mysql.com/archives/installer/)
+2. Install MySQL Server 5.7.41
+3. Set root password to `123456` during installation
+4. Configure to use port 3306 (or 3308 if you prefer)
+5. Open a new PowerShell and run:
    ```powershell
-   psql --version
-   Get-Service -Name postgresql*
+   mysql --version
+   Get-Service -Name MySQL*
    ```
+
+*Ubuntu:*
+```bash
+# Download MySQL 5.7 repository
+wget https://dev.mysql.com/get/mysql-apt-config_0.8.22-1_all.deb
+sudo dpkg -i mysql-apt-config_0.8.22-1_all.deb
+# Select MySQL 5.7 during configuration (recommended: 5.7.41)
+
+# Install MySQL
+sudo apt update
+sudo apt install mysql-server -y
+
+# Set root password
+sudo mysql_secure_installation
+# Enter password: 123456
+
+# Check MySQL version
+mysql --version
+
+# Start MySQL service
+sudo systemctl start mysql
+sudo systemctl enable mysql
+```
+
+**ImageMagick:**
+
+*Windows:*
+1. Download ImageMagick from [imagemagick.org](https://imagemagick.org/script/download.php#windows)
+2. Install with "Add to PATH" option checked
+3. Verify installation:
+   ```powershell
+   magick -version
+   ```
+
+*Ubuntu:*
+```bash
+sudo apt update
+sudo apt install imagemagick -y
+magick -version
+```
 
 ### Backend Setup
 
@@ -64,20 +155,40 @@ A full-stack menu management application built with Ruby on Rails API backend an
    bundle install
    ```
 
-3. **Set up database:**
+3. **Set up environment variables (optional):**
+   Create a `.env.local` file in the `backend` directory if you need to use a different MySQL port or password:
+   ```bash
+   DATABASE_PORT=3308
+   # DATABASE_PASSWORD=123456  # Only set if your MySQL has a password (Podman container uses empty password by default)
+   ```
+   Note: 
+   - Default MySQL port is 3306. Use `.env.local` to override with 3308 if needed.
+   - If using Podman with `MYSQL_ALLOW_EMPTY_PASSWORD=yes`, leave `DATABASE_PASSWORD` unset (empty password).
+   - If your MySQL has a password, set `DATABASE_PASSWORD` in `.env.local`.
+   
+   **Important:** The `dotenv-rails` gem is already included in the Gemfile to automatically load `.env.local` files. After creating or modifying `.env.local`, restart your Rails server for changes to take effect.
+
+4. **Set up database:**
    ```bash
    rails db:create
    rails db:migrate
+   rails db:seed
    ```
+   
+   The seed file creates test users:
+   - `admin@example.com` (password: `test123456`)
+   - `user1@example.com` (password: `test123456`)
+   - `user2@example.com` (password: `test123456`)
+   - `demo@example.com` (password: `test123456`, includes sample restaurant with menu)
 
-4. **Set up ActiveStorage:**
+5. **Set up ActiveStorage:**
    ```bash
    rails active_storage:install
    rails db:migrate
    mkdir -p storage
    ```
 
-5. **Start the Rails server:**
+6. **Start the Rails server:**
    ```bash
    rails server
    ```
@@ -97,10 +208,21 @@ A full-stack menu management application built with Ruby on Rails API backend an
    ```
 
 3. **Set environment variables:**
-   Create a `.env` file in the `frontend` directory:
+   Create a `.env` file in the `frontend` directory. You can configure the backend API URL in multiple ways:
+   
+   **Option 1: Full URL (recommended)**
    ```bash
    VITE_API_URL=http://localhost:3000/api
    ```
+   
+   **Option 2: Separate host and port (flexible)**
+   ```bash
+   VITE_API_HOST=localhost
+   VITE_API_PORT=3001
+   # Optional: VITE_API_PROTOCOL=http (default)
+   ```
+   
+   This allows you to easily change the backend port. For example, if you run `rails s -p 3001`, just set `VITE_API_PORT=3001` in your `.env` file.
 
 4. **Start the development server:**
    ```bash
@@ -111,10 +233,22 @@ A full-stack menu management application built with Ruby on Rails API backend an
 
 ### Daily Workflow
 
-1. Start PostgreSQL service (if not running automatically)
-2. Open Terminal 1: `cd backend` → `rails s`
-3. Open Terminal 2: `cd frontend` → `npm run dev`
-4. Open browser: `http://localhost:5173`
+1. **Start MySQL:**
+   - *If using Podman:*
+     ```bash
+     podman start menu_api_development
+     ```
+   - *If using direct installation:*
+     - **Windows:** Services → MySQL (or it may start automatically)
+     - **Ubuntu:** `sudo systemctl start mysql`
+
+2. **Start Backend:**
+   - Open Terminal 1: `cd backend` → `rails s`
+
+3. **Start Frontend:**
+   - Open Terminal 2: `cd frontend` → `npm run dev`
+
+4. **Open browser:** `http://localhost:5173`
 
 ## 📚 Features
 
@@ -216,11 +350,18 @@ The token is automatically stored in localStorage after login/signup and include
 
 ### Backend
 - `SECRET_KEY_BASE` - Rails secret key (required for JWT)
-- `DATABASE_URL` - PostgreSQL connection string (optional)
+- `DATABASE_URL` - MySQL connection string (optional)
+- `DATABASE_PORT` - MySQL port (default: 3306, can be set to 3308 in .env.local)
+- `DATABASE_PASSWORD` - MySQL password (optional, empty by default for Podman container with MYSQL_ALLOW_EMPTY_PASSWORD)
 - `RAILS_ENV` - Environment (development, test, production)
 
 ### Frontend
-- `VITE_API_URL` - Backend API URL (default: `http://localhost:3000/api`)
+- `VITE_API_URL` - Full backend API URL (e.g., `http://localhost:3000/api`)
+- `VITE_API_HOST` - Backend host (default: `localhost`)
+- `VITE_API_PORT` - Backend port (default: `3000`)
+- `VITE_API_PROTOCOL` - Protocol (default: `http`)
+
+**Note:** If `VITE_API_URL` is set, it takes priority. Otherwise, the URL is built from `VITE_API_HOST`, `VITE_API_PORT`, and `VITE_API_PROTOCOL`. This allows you to easily change the backend port by just updating `VITE_API_PORT` in your `.env` file.
 
 ## 🐛 Troubleshooting
 
@@ -237,27 +378,51 @@ rails db:create
 rails db:migrate
 ```
 
-**"Connection refused" (PostgreSQL):**
-- Check PostgreSQL service is running
-- Windows: Services → PostgreSQL
-- Linux: `sudo systemctl status postgresql`
-- Mac: `brew services list`
+**"Connection refused" (MySQL):**
+
+*If using Podman:*
+```bash
+# Check if container is running
+podman ps -a | grep menu_api_development
+
+# Start container if stopped
+podman start menu_api_development
+
+# Check container logs
+podman logs menu_api_development
+```
+
+*If using direct installation:*
+- **Windows:** Check Services → MySQL, or run:
+  ```powershell
+  Get-Service -Name MySQL*
+  Start-Service MySQL*
+  ```
+- **Ubuntu:** Check and start MySQL service:
+  ```bash
+  sudo systemctl status mysql
+  sudo systemctl start mysql
+  sudo systemctl enable mysql
+  ```
 
 **"Port 3000 already in use":**
-```bash
+
+*Windows:*
+```powershell
 # Find process using port 3000
-# Windows
 netstat -ano | findstr :3000
 
-# Linux/Mac
-lsof -i :3000
-
-# Kill process (replace PID with process ID)
-# Windows
+# Kill process (replace <PID> with process ID from above)
 taskkill /PID <PID> /F
+```
 
-# Linux/Mac
-kill -9 <PID>
+*Ubuntu:*
+```bash
+# Find process using port 3000
+sudo lsof -i :3000
+
+# Kill process (replace <PID> with process ID from above)
+sudo kill -9 <PID>
 ```
 
 ### Frontend Issues
@@ -272,15 +437,46 @@ npm install
 - Vite will automatically use another port (5174, 5175...)
 - Or kill the process using port 5173
 
+**"crypto$2.getRandomValues is not a function" or "Unsupported engine" errors:**
+- This error occurs when using Node.js 16 with Vite 5.0+
+- **Solution 1 (Recommended):** Upgrade Node.js to 18+:
+  - **Ubuntu:** Use `nvm` to install Node.js 18:
+    ```bash
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+    nvm install 18
+    nvm use 18
+    ```
+  - **Windows:** Download and install Node.js 18+ from [nodejs.org](https://nodejs.org/)
+- **Solution 2:** The project has been configured to use Vite 4.5.0 which is compatible with Node.js 16, but upgrading to Node.js 18+ is still recommended for best compatibility.
+
 **"Network Error" when calling API:**
-- Check backend is running at `http://localhost:3000`
+- Check backend is running (default: `http://localhost:3000`)
+- Verify the port matches your backend port (if using `rails s -p 3001`, set `VITE_API_PORT=3001` in frontend `.env`)
 - Check CORS settings in `backend/config/initializers/cors.rb`
-- Check `.env` file in frontend has `VITE_API_URL=http://localhost:3000/api`
+- Verify frontend `.env` file:
+  - Option 1: `VITE_API_URL=http://localhost:3000/api` (or your custom port)
+  - Option 2: `VITE_API_HOST=localhost` and `VITE_API_PORT=3000` (or your custom port)
 
 ### ActiveStorage Issues
-- Ensure ImageMagick is installed
-- Check storage directory permissions
-- Verify ActiveStorage migrations are run
+
+*ImageMagick not found:*
+- **Windows:** Reinstall ImageMagick and ensure "Add to PATH" is checked
+- **Ubuntu:** `sudo apt install imagemagick -y`
+
+*Storage directory permissions:*
+- **Windows:** Ensure you have write permissions in `backend/storage/`
+- **Ubuntu:** 
+  ```bash
+  sudo chmod -R 755 backend/storage
+  sudo chown -R $USER:$USER backend/storage
+  ```
+
+*Verify ActiveStorage migrations:*
+```bash
+cd backend
+rails active_storage:install
+rails db:migrate
+```
 
 ### Browser Extension Errors
 
