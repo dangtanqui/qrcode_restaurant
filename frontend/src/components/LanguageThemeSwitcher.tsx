@@ -11,7 +11,7 @@ export default function LanguageThemeSwitcher() {
       {/* Language Switcher */}
       <div className="relative group">
         <button
-          className="flex items-center space-x-1 px-3 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className="flex items-center justify-center space-x-1 px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           onClick={() => setLanguage(language === 'vi' ? 'en' : 'vi')}
           title={t('settings.language')}
         >
@@ -22,7 +22,7 @@ export default function LanguageThemeSwitcher() {
 
       {/* Theme Toggle */}
       <button
-        className="p-2 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+        className="flex items-center justify-center p-1.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
         onClick={toggleTheme}
         title={theme === 'light' ? t('settings.dark') : t('settings.light')}
       >

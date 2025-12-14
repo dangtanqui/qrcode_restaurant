@@ -5,12 +5,12 @@ import { restaurantsApi } from '../api/restaurants'
 import { useAuth } from '../hooks/useAuth'
 import { useI18n } from '../contexts/I18nContext'
 import LanguageThemeSwitcher from '../components/LanguageThemeSwitcher'
-import { Plus, LogOut, Edit, Trash2, QrCode, Menu, X, ShoppingBag } from 'lucide-react'
+import { Plus, LogOut, Edit, Trash2, QrCode, Menu, X, ShoppingBag, TrendingUp, Gift, Ticket, Package } from 'lucide-react'
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const { logout, user } = useAuth()
-  const { t, language } = useI18n()
+  const { t } = useI18n()
   const queryClient = useQueryClient()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -26,15 +26,6 @@ export default function Dashboard() {
     },
   })
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<{ name: string; address: string; logo?: File }> }) =>
-      restaurantsApi.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['restaurants'] })
-    },
-  })
-
-  const [editingRestaurant, setEditingRestaurant] = useState<number | null>(null)
 
   const handleLogout = () => {
     logout()
@@ -58,7 +49,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <nav className="bg-white dark:bg-gray-800 shadow">
+      <nav className="bg-white dark:bg-gray-800 shadow sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -160,17 +151,15 @@ export default function Dashboard() {
                 <RestaurantCard
                   key={restaurant.id}
                   restaurant={restaurant}
-                  editing={editingRestaurant === restaurant.id}
-                  onEdit={() => setEditingRestaurant(restaurant.id)}
-                  onCancel={() => setEditingRestaurant(null)}
-                  onUpdate={(data) => {
-                    updateMutation.mutate({ id: restaurant.id, data })
-                    setEditingRestaurant(null)
-                  }}
                   onDelete={() => handleDelete(restaurant.id)}
                   onNavigateMenu={() => navigate(`/restaurant/${restaurant.id}/menu`)}
                   onNavigateOrders={() => navigate(`/restaurant/${restaurant.id}/orders`)}
                   onNavigateQR={() => navigate(`/restaurant/${restaurant.id}/qr`)}
+                  onNavigateEdit={() => navigate(`/restaurant/${restaurant.id}/edit`)}
+                  onNavigateAnalytics={() => navigate(`/restaurant/${restaurant.id}/analytics`)}
+                  onNavigatePromotions={() => navigate(`/restaurant/${restaurant.id}/promotions`)}
+                  onNavigateVouchers={() => navigate(`/restaurant/${restaurant.id}/vouchers`)}
+                  onNavigateCombos={() => navigate(`/restaurant/${restaurant.id}/combos`)}
                 />
               ))}
             </div>
@@ -183,141 +172,56 @@ export default function Dashboard() {
 
 function RestaurantCard({
   restaurant,
-  editing,
-  onEdit,
-  onCancel,
-  onUpdate,
   onDelete,
   onNavigateMenu,
   onNavigateOrders,
   onNavigateQR,
+  onNavigateEdit,
+  onNavigateAnalytics,
+  onNavigatePromotions,
+  onNavigateVouchers,
+  onNavigateCombos,
 }: {
-  restaurant: { id: number; name: string; address: string; logo_url: string | null }
-  editing: boolean
-  onEdit: () => void
-  onCancel: () => void
-  onUpdate: (data: { name: string; address: string; logo?: File }) => void
+  restaurant: { id: number; name: string; address: string; logo_url: string | null; qr_code_url?: string | null }
   onDelete: () => void
   onNavigateMenu: () => void
   onNavigateOrders: () => void
   onNavigateQR: () => void
+  onNavigateEdit: () => void
+  onNavigateAnalytics: () => void
+  onNavigatePromotions: () => void
+  onNavigateVouchers: () => void
+  onNavigateCombos: () => void
 }) {
-  const { t } = useI18n()
-  const [name, setName] = useState(restaurant.name)
-  const [address, setAddress] = useState(restaurant.address)
-  const [logo, setLogo] = useState<File | null>(null)
-  const [logoPreview, setLogoPreview] = useState<string | null>(restaurant.logo_url)
+  const { t, language } = useI18n()
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setLogo(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onUpdate({ name, address, logo: logo || undefined })
-  }
-
-  const handleCancel = () => {
-    setName(restaurant.name)
-    setAddress(restaurant.address)
-    setLogo(null)
-    setLogoPreview(restaurant.logo_url)
-    onCancel()
-  }
-
-  if (editing) {
-    return (
-      <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label htmlFor={`name-${restaurant.id}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t('restaurant.name')}
-            </label>
-            <input
-              type="text"
-              id={`name-${restaurant.id}`}
-              required
-              className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoFocus
-            />
-          </div>
-
-          <div>
-            <label htmlFor={`address-${restaurant.id}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t('restaurant.address')}
-            </label>
-            <input
-              type="text"
-              id={`address-${restaurant.id}`}
-              required
-              className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label htmlFor={`logo-${restaurant.id}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t('restaurant.logo')}
-            </label>
-            <input
-              type="file"
-              id={`logo-${restaurant.id}`}
-              accept="image/*"
-              className="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-900 file:text-indigo-700 dark:file:text-indigo-300 hover:file:bg-indigo-100 dark:hover:file:bg-indigo-800"
-              onChange={handleLogoChange}
-            />
-            {logoPreview && (
-              <img
-                src={logoPreview}
-                alt="Logo preview"
-                className="mt-4 h-32 w-32 object-cover rounded"
-              />
-            )}
-          </div>
-
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
-            >
-              {t('common.cancel')}
-            </button>
-            <button
-              type="submit"
-              className="px-3 py-1 text-sm text-white bg-indigo-600 rounded hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-            >
-              {t('common.save')}
-            </button>
-          </div>
-        </form>
-      </div>
-    )
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-      {restaurant.logo_url && (
+    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg flex flex-col h-full">
+      {restaurant.logo_url ? (
         <img
           src={restaurant.logo_url}
           alt={restaurant.name}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover flex-shrink-0"
         />
+      ) : (
+        <div className="w-full h-48 bg-indigo-600 dark:bg-indigo-700 flex items-center justify-center flex-shrink-0">
+          <span className="text-4xl font-bold text-white">
+            {getInitials(restaurant.name)}
+          </span>
+        </div>
       )}
-      <div className="p-6">
-        <div className="flex justify-between items-start mb-2">
-          <div className="flex-1">
+      <div className="p-6 flex flex-col flex-1 min-h-0">
+        <div className="flex justify-between items-start mb-2 flex-shrink-0">
+          <div className="flex-1 min-w-0">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
               {restaurant.name}
             </h3>
@@ -325,41 +229,82 @@ function RestaurantCard({
               {restaurant.address}
             </p>
           </div>
-          <button
-            onClick={onEdit}
-            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 ml-2"
-            title={t('common.edit') || 'Edit'}
-          >
-            <Edit className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+            <button
+              onClick={onNavigateEdit}
+              className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-300"
+              title={language === 'vi' ? 'Sửa nhà hàng' : 'Edit Restaurant'}
+            >
+              <Edit className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onDelete}
+              className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+              title={t('common.delete') || 'Delete'}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            onClick={onNavigateMenu}
-            className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-          >
-            <Edit className="w-4 h-4 mr-2" />
-            {t('dashboard.editMenu')}
-          </button>
-          <button
-            onClick={onNavigateOrders}
-            className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-          >
-            <ShoppingBag className="w-4 h-4 mr-2" />
-            {t('dashboard.orders')}
-          </button>
-          <button
-            onClick={onNavigateQR}
-            className="inline-flex items-center justify-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-          >
-            <QrCode className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onDelete}
-            className="inline-flex items-center justify-center px-3 py-2 border border-red-300 dark:border-red-600 shadow-sm text-sm font-medium rounded-md text-red-700 dark:text-red-400 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+        <div className="mt-auto space-y-2 flex-shrink-0">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={onNavigateMenu}
+              className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              {t('dashboard.editMenu')}
+            </button>
+            <button
+              onClick={onNavigateOrders}
+              className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+            >
+              <ShoppingBag className="w-4 h-4 mr-2" />
+              {t('dashboard.orders')}
+            </button>
+            <button
+              onClick={onNavigateQR}
+              className="inline-flex items-center justify-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+              title={language === 'vi' ? 'QR Code Menu' : 'Menu QR Code'}
+            >
+              <QrCode className="w-4 h-4 mr-2" />
+              <span>{language === 'vi' ? 'QR Menu' : 'QR Menu'}</span>
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={onNavigateAnalytics}
+              className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-blue-300 dark:border-blue-600 shadow-sm text-sm font-medium rounded-md text-blue-700 dark:text-blue-400 bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              title={language === 'vi' ? 'Phân tích' : 'Analytics'}
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              {language === 'vi' ? 'Phân tích' : 'Analytics'}
+            </button>
+            <button
+              onClick={onNavigatePromotions}
+              className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-purple-300 dark:border-purple-600 shadow-sm text-sm font-medium rounded-md text-purple-700 dark:text-purple-400 bg-white dark:bg-gray-700 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+              title={language === 'vi' ? 'Khuyến mãi' : 'Promotions'}
+            >
+              <Gift className="w-4 h-4 mr-2" />
+              {language === 'vi' ? 'Khuyến mãi' : 'Promotions'}
+            </button>
+            <button
+              onClick={onNavigateVouchers}
+              className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-orange-300 dark:border-orange-600 shadow-sm text-sm font-medium rounded-md text-orange-700 dark:text-orange-400 bg-white dark:bg-gray-700 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+              title={language === 'vi' ? 'Voucher' : 'Vouchers'}
+            >
+              <Ticket className="w-4 h-4 mr-2" />
+              {language === 'vi' ? 'Voucher' : 'Vouchers'}
+            </button>
+            <button
+              onClick={onNavigateCombos}
+              className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-pink-300 dark:border-pink-600 shadow-sm text-sm font-medium rounded-md text-pink-700 dark:text-pink-400 bg-white dark:bg-gray-700 hover:bg-pink-50 dark:hover:bg-pink-900/20"
+              title={language === 'vi' ? 'Combo' : 'Combos'}
+            >
+              <Package className="w-4 h-4 mr-2" />
+              {language === 'vi' ? 'Combo' : 'Combos'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

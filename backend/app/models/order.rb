@@ -8,6 +8,7 @@ class Order < ApplicationRecord
     confirmed: 'confirmed',
     preparing: 'preparing',
     ready: 'ready',
+    served: 'served',
     paid: 'paid',
     cancelled: 'cancelled'
   }

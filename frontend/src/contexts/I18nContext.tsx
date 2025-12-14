@@ -58,6 +58,7 @@ const translations: Record<Language, Record<string, string>> = {
     'restaurant.scanQR': 'Quét mã QR này để xem thực đơn',
     'restaurant.downloadSVG': 'Tải SVG',
     'restaurant.downloadPNG': 'Tải PNG',
+    'restaurant.edit': 'Sửa nhà hàng',
     
     // Menu
     'menu.categories': 'Danh mục',
@@ -140,6 +141,7 @@ const translations: Record<Language, Record<string, string>> = {
     'restaurant.scanQR': 'Scan this QR code to view the menu',
     'restaurant.downloadSVG': 'Download SVG',
     'restaurant.downloadPNG': 'Download PNG',
+    'restaurant.edit': 'Edit Restaurant',
     
     // Menu
     'menu.categories': 'Categories',

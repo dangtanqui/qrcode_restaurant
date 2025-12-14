@@ -5,7 +5,11 @@ class Restaurant < ApplicationRecord
   belongs_to :user
   has_one :menu, dependent: :destroy
   has_many :orders, dependent: :destroy
+  has_many :reviews, dependent: :destroy
+  has_many :combos, dependent: :destroy
+  has_many :promotions, dependent: :destroy
   has_one_attached :logo
+  has_one_attached :qr_code
   
   validates :name, presence: true
   validates :address, presence: true

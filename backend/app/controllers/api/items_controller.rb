@@ -22,7 +22,29 @@ class Api::ItemsController < ApplicationController
   end
   
   def update
-    if @item.update(item_params)
+    update_params = item_params
+    # Đảm bảo quantity được update ngay cả khi là 0
+    if params.key?(:quantity)
+      if params[:quantity].to_s.strip.empty?
+        update_params[:quantity] = nil
+      else
+        update_params[:quantity] = params[:quantity].to_i
+      end
+    end
+    
+    # Nếu có category_id mới, cần kiểm tra quyền truy cập
+    if update_params[:category_id].present? && update_params[:category_id].to_i != @item.category_id
+      new_category = Category.find(update_params[:category_id])
+      menu = new_category.menu
+      unless menu.restaurant.user_id == current_user.id
+        render json: { error: 'Unauthorized' }, status: :unauthorized
+        return
+      end
+      # Cập nhật position trong category mới
+      update_params[:position] = new_category.items.maximum(:position).to_i + 1
+    end
+    
+    if @item.update(update_params)
       @item.image.attach(params[:image]) if params[:image].present?
       render json: item_json(@item)
     else
@@ -48,7 +70,16 @@ class Api::ItemsController < ApplicationController
   end
   
   def item_params
-    params.permit(:name, :price, :description, :is_available, :position)
+    permitted = params.permit(:name, :price, :description, :is_available, :position, :quantity, :status, :is_visible, :category_id)
+    # Xử lý quantity: nếu là empty string thì set thành nil, nếu có giá trị thì convert sang integer
+    if params[:quantity].present?
+      if params[:quantity].to_s.strip.empty?
+        permitted[:quantity] = nil
+      else
+        permitted[:quantity] = params[:quantity].to_i
+      end
+    end
+    permitted
   end
   
   def item_json(item)
@@ -59,7 +90,10 @@ class Api::ItemsController < ApplicationController
       description: item.description,
       is_available: item.is_available,
       position: item.position,
-      image_url: item.image.attached? ? url_for(item.image) : nil
+      image_url: item.image.attached? ? url_for(item.image) : nil,
+      quantity: item.quantity,
+      status: item.status || 'in_stock',
+      is_visible: item.is_visible.nil? ? true : item.is_visible
     }
   end
 end

@@ -8,10 +8,15 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import RestaurantSetup from './pages/RestaurantSetup'
+import RestaurantEdit from './pages/RestaurantEdit'
 import MenuEditor from './pages/MenuEditor'
 import CustomerMenu from './pages/CustomerMenu'
 import QRGenerator from './pages/QRGenerator'
 import OrderManagement from './pages/OrderManagement'
+import Analytics from './pages/Analytics'
+import PromotionsManager from './pages/PromotionsManager'
+import VouchersManager from './pages/VouchersManager'
+import CombosManager from './pages/CombosManager'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { token, loading } = useAuth()
@@ -65,6 +70,14 @@ function App() {
               }
             />
             <Route
+              path="/restaurant/:id/edit"
+              element={
+                <PrivateRoute>
+                  <RestaurantEdit />
+                </PrivateRoute>
+              }
+            />
+            <Route
               path="/restaurant/:id/menu"
               element={
                 <PrivateRoute>
@@ -85,6 +98,38 @@ function App() {
               element={
                 <PrivateRoute>
                   <OrderManagement />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/restaurant/:id/analytics"
+              element={
+                <PrivateRoute>
+                  <Analytics />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/restaurant/:id/promotions"
+              element={
+                <PrivateRoute>
+                  <PromotionsManager />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/restaurant/:id/vouchers"
+              element={
+                <PrivateRoute>
+                  <VouchersManager />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/restaurant/:id/combos"
+              element={
+                <PrivateRoute>
+                  <CombosManager />
                 </PrivateRoute>
               }
             />

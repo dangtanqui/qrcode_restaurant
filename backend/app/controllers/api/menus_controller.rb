@@ -60,7 +60,10 @@ class Api::MenusController < ApplicationController
       description: item.description,
       is_available: item.is_available,
       position: item.position,
-      image_url: item.image.attached? ? url_for(item.image) : nil
+      image_url: item.image.attached? ? url_for(item.image) : nil,
+      quantity: item.quantity,
+      status: item.status || 'in_stock',
+      is_visible: item.is_visible.nil? ? true : item.is_visible
     }
   end
 end

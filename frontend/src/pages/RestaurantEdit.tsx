@@ -1,15 +1,19 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { restaurantsApi } from '../api/restaurants'
 import { useI18n } from '../contexts/I18nContext'
 import LanguageThemeSwitcher from '../components/LanguageThemeSwitcher'
-import { ArrowLeft } from 'lucide-react'
 import CustomSelect from '../components/CustomSelect'
+import { ArrowLeft, ChevronDown } from 'lucide-react'
 
-export default function RestaurantSetup() {
+export default function RestaurantEdit() {
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t, language } = useI18n()
+  const queryClient = useQueryClient()
+  const restaurantId = parseInt(id!)
+
   const [name, setName] = useState('')
   const [address, setAddress] = useState('')
   const [phone, setPhone] = useState('')
@@ -27,15 +31,81 @@ export default function RestaurantSetup() {
   const [textColor, setTextColor] = useState('#000000')
   const [buttonTextColor, setButtonTextColor] = useState('#FFFFFF')
   const [fontFamily, setFontFamily] = useState('Inter')
-  const [buttonStyle, setButtonStyle] = useState<'rounded-border' | 'rounded-filled' | 'rounded-lg-border' | 'rounded-lg-filled' | 'rounded-full-border' | 'rounded-full-filled'>('rounded-full-filled')
+  const [buttonStyle, setButtonStyle] = useState<'rounded-border' | 'rounded-filled' | 'rounded-lg-border' | 'rounded-lg-filled' | 'rounded-full-border' | 'rounded-full-filled'>('rounded-full-border')
   const [facebookUrl, setFacebookUrl] = useState('')
   const [tiktokUrl, setTiktokUrl] = useState('')
   const [instagramUrl, setInstagramUrl] = useState('')
 
+  const { data: restaurant, isLoading } = useQuery({
+    queryKey: ['restaurant', restaurantId],
+    queryFn: () => restaurantsApi.getOne(restaurantId),
+  })
+
+  useEffect(() => {
+    if (restaurant) {
+      console.log('Loading restaurant data:', restaurant)
+      setName(restaurant.name || '')
+      setAddress(restaurant.address || '')
+      setPhone(restaurant.phone || '')
+      setLogoPreview(restaurant.logo_url)
+      // Migrate old button style values to new format
+      const oldStyle = restaurant.button_style as string
+      let newStyle: 'rounded-border' | 'rounded-filled' | 'rounded-lg-border' | 'rounded-lg-filled' | 'rounded-full-border' | 'rounded-full-filled' = 'rounded-full-border'
+      if (oldStyle) {
+        // If already in new format, use as is
+        if (['rounded-border', 'rounded-filled', 'rounded-lg-border', 'rounded-lg-filled', 'rounded-full-border', 'rounded-full-filled'].includes(oldStyle)) {
+          newStyle = oldStyle as any
+        } else {
+          // Migrate old format: default to border style
+          if (oldStyle === 'rounded') newStyle = 'rounded-border'
+          else if (oldStyle === 'rounded-lg') newStyle = 'rounded-lg-border'
+          else if (oldStyle === 'rounded-full') newStyle = 'rounded-full-border'
+        }
+      }
+      setButtonStyle(newStyle)
+      setFontFamily(restaurant.font_family || 'Inter')
+      setThemeColor(restaurant.theme_color || '#4F46E5')
+      setBackgroundColor(restaurant.background_color || '#FFFFFF')
+      setTextColor(restaurant.text_color || '#000000')
+      setButtonTextColor(restaurant.button_text_color || '#FFFFFF')
+      // Format date properly
+      if (restaurant.grand_opening_date) {
+        const dateStr = typeof restaurant.grand_opening_date === 'string' 
+          ? restaurant.grand_opening_date.split('T')[0]
+          : restaurant.grand_opening_date
+        setGrandOpeningDate(dateStr || '')
+      } else {
+        setGrandOpeningDate('')
+      }
+      setGrandOpeningMessage(restaurant.grand_opening_message || '')
+      setIsGrandOpening(restaurant.is_grand_opening || false)
+      setHeaderNote(restaurant.header_note || '')
+      setFootnote(restaurant.footnote || '')
+      setFacebookUrl(restaurant.facebook_url || '')
+      setTiktokUrl(restaurant.tiktok_url || '')
+      setInstagramUrl(restaurant.instagram_url || '')
+      if (restaurant.qr_code_url) {
+        setQrCodePreview(restaurant.qr_code_url)
+      }
+    }
+  }, [restaurant])
+
   const mutation = useMutation({
-    mutationFn: restaurantsApi.create,
+    mutationFn: async (data: any) => {
+      // Send data as object - restaurantsApi.update will handle JSON and FormData separately
+      return restaurantsApi.update(restaurantId, data)
+    },
     onSuccess: (data) => {
-      navigate(`/restaurant/${data.id}/menu`)
+      console.log('Update successful, response:', data)
+      queryClient.invalidateQueries({ queryKey: ['restaurant', restaurantId] })
+      queryClient.invalidateQueries({ queryKey: ['restaurants'] })
+      // Wait a bit before navigating to ensure cache is updated
+      setTimeout(() => {
+        navigate('/dashboard')
+      }, 100)
+    },
+    onError: (error) => {
+      console.error('Update failed:', error)
     },
   })
 
@@ -65,7 +135,7 @@ export default function RestaurantSetup() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    mutation.mutate({
+    const submitData = {
       name,
       address,
       phone,
@@ -85,7 +155,17 @@ export default function RestaurantSetup() {
       facebook_url: facebookUrl || undefined,
       tiktok_url: tiktokUrl || undefined,
       instagram_url: instagramUrl || undefined,
-    })
+    }
+    console.log('Submitting data:', submitData)
+    mutation.mutate(submitData)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+      </div>
+    )
   }
 
   return (
@@ -101,7 +181,7 @@ export default function RestaurantSetup() {
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {t('restaurant.setup')}
+                {t('restaurant.edit') || 'Edit Restaurant'}
               </h1>
             </div>
             <LanguageThemeSwitcher />
@@ -144,6 +224,19 @@ export default function RestaurantSetup() {
                     className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {language === 'vi' ? 'Số điện thoại' : 'Phone'}
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                   />
                 </div>
 
@@ -519,7 +612,7 @@ export default function RestaurantSetup() {
                 disabled={mutation.isPending}
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 disabled:opacity-50"
               >
-                {mutation.isPending ? t('restaurant.creating') : t('restaurant.create')}
+                {mutation.isPending ? (language === 'vi' ? 'Đang lưu...' : 'Saving...') : (language === 'vi' ? 'Lưu' : 'Save')}
               </button>
             </div>
           </form>

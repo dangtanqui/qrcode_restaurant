@@ -8,6 +8,9 @@ export interface Item {
   is_available: boolean
   position: number
   image_url: string | null
+  quantity?: number
+  status?: 'in_stock' | 'out_of_stock' | 'new' | 'coming_soon'
+  is_visible?: boolean
 }
 
 export interface Category {
@@ -40,6 +43,9 @@ export interface CreateItemData {
   is_available?: boolean
   position?: number
   image?: File
+  quantity?: number
+  status?: 'in_stock' | 'out_of_stock' | 'new' | 'coming_soon'
+  is_visible?: boolean
 }
 
 export interface UpdateItemData {
@@ -49,6 +55,10 @@ export interface UpdateItemData {
   is_available?: boolean
   position?: number
   image?: File
+  quantity?: number
+  status?: 'in_stock' | 'out_of_stock' | 'new' | 'coming_soon'
+  is_visible?: boolean
+  category_id?: number
 }
 
 export const menuApi = {
@@ -84,6 +94,9 @@ export const menuApi = {
     if (data.is_available !== undefined) formData.append('is_available', data.is_available.toString())
     if (data.position !== undefined) formData.append('position', data.position.toString())
     if (data.image) formData.append('image', data.image)
+    if (data.quantity !== undefined) formData.append('quantity', data.quantity.toString())
+    if (data.status) formData.append('status', data.status)
+    if (data.is_visible !== undefined) formData.append('is_visible', data.is_visible.toString())
     
     const response = await apiClient.post<Item>(`/categories/${categoryId}/items`, formData, {
       headers: {
@@ -101,6 +114,17 @@ export const menuApi = {
     if (data.is_available !== undefined) formData.append('is_available', data.is_available.toString())
     if (data.position !== undefined) formData.append('position', data.position.toString())
     if (data.image) formData.append('image', data.image)
+    // Gửi quantity: nếu là null thì gửi empty string, nếu là số (kể cả 0) thì gửi số đó
+    if (data.quantity !== undefined) {
+      if (data.quantity === null) {
+        formData.append('quantity', '')
+      } else {
+        formData.append('quantity', data.quantity.toString())
+      }
+    }
+    if (data.status !== undefined) formData.append('status', data.status)
+    if (data.is_visible !== undefined) formData.append('is_visible', data.is_visible.toString())
+    if (data.category_id !== undefined) formData.append('category_id', data.category_id.toString())
     
     const response = await apiClient.put<Item>(`/items/${id}`, formData, {
       headers: {

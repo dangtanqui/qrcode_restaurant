@@ -15,9 +15,25 @@ export interface PublicMenu {
     id: number
     name: string
     address: string
+    phone?: string
     currency?: string
     exchange_rate?: number
     logo_url: string | null
+    button_style?: string
+    theme_color?: string
+    background_color?: string
+    text_color?: string
+    button_text_color?: string
+    header_note?: string
+    footnote?: string
+    grand_opening_date?: string
+    grand_opening_message?: string
+    is_grand_opening?: boolean
+    facebook_url?: string
+    tiktok_url?: string
+    instagram_url?: string
+    average_rating?: number
+    total_reviews?: number
   }
   categories: Array<{
     id: number
@@ -31,6 +47,9 @@ export interface PublicMenu {
       is_available: boolean
       position: number
       image_url: string | null
+      status?: string
+      quantity?: number
+      is_visible?: boolean
     }>
   }>
 }
@@ -84,6 +103,21 @@ export const publicApi = {
   
   createOrder: async (slug: string, data: CreateOrderData): Promise<OrderResponse> => {
     const response = await publicClient.post<OrderResponse>(`/public/${slug}/orders`, data)
+    return response.data
+  },
+
+  getReviews: async (slug: string) => {
+    const response = await publicClient.get(`/public/${slug}/reviews`)
+    return response.data
+  },
+
+  createReview: async (slug: string, data: { rating: number; comment?: string; customer_name: string }) => {
+    const response = await publicClient.post(`/public/${slug}/reviews`, data)
+    return response.data
+  },
+
+  createReply: async (slug: string, data: { parent_id: number; comment: string; customer_name: string }) => {
+    const response = await publicClient.post(`/public/${slug}/reviews`, data)
     return response.data
   },
 }
