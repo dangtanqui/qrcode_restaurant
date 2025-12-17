@@ -271,7 +271,7 @@ function Column({ column, orders, language, formatCurrency, onStatusChange, onPa
   }
 
   return (
-    <div className="flex flex-col h-full min-h-[500px]">
+    <div className="flex flex-col h-full min-h-[500px] min-w-[280px] md:min-w-0 flex-shrink-0 md:flex-shrink">
       <div className={`rounded-t-lg p-3 mb-2 border-2 ${getColumnColor()}`}>
         <h3 className="font-semibold text-gray-900 dark:text-white">
           {title}
@@ -532,20 +532,22 @@ export default function OrderManagement() {
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
             >
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 overflow-x-auto pb-4">
-                {columns.map((column) => (
-                  <Column
-                    key={column.id}
-                    column={column}
-                    orders={filteredOrders}
-                    language={language}
-                    formatCurrency={formatCurrency}
-                    onStatusChange={handleStatusChange}
-                    onPaymentStatusChange={handlePaymentStatusChange}
-                    getStatusColor={getStatusColor}
-                    overId={overId}
-                  />
-                ))}
+              <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-4">
+                <div className="flex md:grid md:grid-cols-3 lg:grid-cols-6 gap-4 min-w-max md:min-w-0">
+                  {columns.map((column) => (
+                    <Column
+                      key={column.id}
+                      column={column}
+                      orders={filteredOrders}
+                      language={language}
+                      formatCurrency={formatCurrency}
+                      onStatusChange={handleStatusChange}
+                      onPaymentStatusChange={handlePaymentStatusChange}
+                      getStatusColor={getStatusColor}
+                      overId={overId}
+                    />
+                  ))}
+                </div>
               </div>
               <DragOverlay>
                 {activeOrder ? (

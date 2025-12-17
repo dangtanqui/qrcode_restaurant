@@ -6,7 +6,7 @@ import { useI18n } from '../contexts/I18nContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useTheme } from '../contexts/ThemeContext'
 import LanguageThemeSwitcher from '../components/LanguageThemeSwitcher'
-import { Plus, Minus, CreditCard, QrCode, Star, LayoutGrid, List, Square, Search, MapPin, Heart, Facebook, Instagram } from 'lucide-react'
+import { Plus, Minus, CreditCard, QrCode, Star, LayoutGrid, List, Square, Search, MapPin, Heart, Facebook, Instagram, ShoppingCart, X } from 'lucide-react'
 
 interface CartItem {
   item_id: number
@@ -260,6 +260,7 @@ export default function CustomerMenu() {
   const [showCheckout, setShowCheckout] = useState(false)
   const [orderData, setOrderData] = useState<any>(null)
   const [paymentQRCode, setPaymentQRCode] = useState<string | null>(null)
+  const [showCartDrawer, setShowCartDrawer] = useState(false)
   const [menuLayout, setMenuLayout] = useState<'card' | 'grid' | 'list'>('card')
   const [searchQuery, setSearchQuery] = useState('')
   const [reviewRating, setReviewRating] = useState(0)
@@ -552,6 +553,22 @@ export default function CustomerMenu() {
   const getItemQuantity = (itemId: number) => {
     const cartItem = cart.find((ci) => ci.item_id === itemId)
     return cartItem?.quantity || 0
+  }
+
+  const updateCartItemQuantity = (itemId: number, delta: number) => {
+    setCart((prev) => {
+      const existing = prev.find((ci) => ci.item_id === itemId)
+      if (existing) {
+        const newQuantity = existing.quantity + delta
+        if (newQuantity <= 0) {
+          return prev.filter((ci) => ci.item_id !== itemId)
+        }
+        return prev.map((ci) =>
+          ci.item_id === itemId ? { ...ci, quantity: newQuantity } : ci
+        )
+      }
+      return prev
+    })
   }
 
   // Filter items based on search query
@@ -1691,6 +1708,161 @@ export default function CustomerMenu() {
 
         </div>
       </div>
+
+      {/* Floating Cart Button */}
+      {cart.length > 0 && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <button
+            onClick={() => setShowCartDrawer(true)}
+            className={getButtonClassName("px-6 py-4 shadow-2xl hover:opacity-90 flex items-center gap-3 text-lg font-semibold")}
+            style={{
+              ...getThemeButtonStyle(),
+              minWidth: '200px',
+            }}
+          >
+            <ShoppingCart className="w-6 h-6" />
+            <span>{language === 'vi' ? 'Giỏ hàng' : 'Cart'}</span>
+            <span className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-2 py-1 rounded-full text-sm font-bold">
+              {cart.reduce((sum, item) => sum + item.quantity, 0)}
+            </span>
+            <span className="ml-auto font-bold">
+              {formatCurrency(total)}
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Cart Drawer */}
+      {showCartDrawer && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-50"
+            onClick={() => setShowCartDrawer(false)}
+          />
+          {/* Drawer */}
+          <div className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white dark:bg-gray-800 shadow-2xl z-50 flex flex-col">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {language === 'vi' ? 'Giỏ hàng' : 'Cart'}
+              </h2>
+              <button
+                onClick={() => setShowCartDrawer(false)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              >
+                <X className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {cart.length === 0 ? (
+                <div className="text-center py-12">
+                  <ShoppingCart className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {language === 'vi' ? 'Giỏ hàng trống' : 'Cart is empty'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {cart.map((item) => (
+                    <div
+                      key={item.item_id}
+                      className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg"
+                    >
+                      {item.image_url && (
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                          {item.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {formatCurrency(item.price)} × {item.quantity}
+                        </p>
+                        <p className="text-sm font-bold mt-1" style={{ color: themeColor }}>
+                          {formatCurrency(item.price * item.quantity)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => updateCartItemQuantity(item.item_id, -1)}
+                          className="p-2 rounded-full hover:opacity-80"
+                          style={{ backgroundColor: themeColor + '20', color: themeColor }}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-8 text-center font-semibold text-gray-900 dark:text-white">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateCartItemQuantity(item.item_id, 1)}
+                          className="p-2 rounded-full hover:opacity-80"
+                          style={{ backgroundColor: themeColor + '20', color: themeColor }}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {cart.length > 0 && (
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700 space-y-4">
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {language === 'vi' ? 'Số bàn' : 'Table Number'} *
+                    </label>
+                    <input
+                      type="text"
+                      value={tableNumber}
+                      onChange={(e) => setTableNumber(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2"
+                      style={{ '--tw-ring-color': themeColor } as React.CSSProperties & { '--tw-ring-color': string }}
+                      placeholder={language === 'vi' ? 'Nhập số bàn' : 'Enter table number'}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {language === 'vi' ? 'Tổng cộng' : 'Total'}:
+                  </span>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold" style={{ color: themeColor }}>
+                      {formatCurrency(total)}
+                    </p>
+                    {restaurantCurrency === 'VND' && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        ≈ {formatUSD(convertToUSD(total, exchangeRate))}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    handleCheckout()
+                    setShowCartDrawer(false)
+                  }}
+                  disabled={createOrderMutation.isPending || !tableNumber.trim()}
+                  className={getButtonClassName("w-full px-6 py-3 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg font-semibold")}
+                  style={getThemeButtonStyle()}
+                >
+                  <CreditCard className="w-5 h-5" />
+                  {createOrderMutation.isPending
+                    ? (language === 'vi' ? 'Đang xử lý...' : 'Processing...')
+                    : (language === 'vi' ? 'Thanh toán' : 'Checkout')}
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Footer */}
       <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12">

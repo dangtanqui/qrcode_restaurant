@@ -8,7 +8,7 @@ import { useI18n } from '../contexts/I18nContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { formatPriceInput, parsePriceInput } from '../utils/currency'
 import LanguageThemeSwitcher from '../components/LanguageThemeSwitcher'
-import { ArrowLeft, Plus, Edit, Trash2, ArrowUp, ArrowDown, Star } from 'lucide-react'
+import { ArrowLeft, Plus, Edit, Trash2, ArrowUp, ArrowDown, Star, LayoutGrid, List, Square } from 'lucide-react'
 import {
   DndContext,
   DragOverlay,
@@ -96,7 +96,10 @@ export default function MenuEditor() {
   const [insertionIndex, setInsertionIndex] = useState<number | null>(null)
   const [categoryHeights, setCategoryHeights] = useState<Record<number, number>>({})
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null)
+  const [menuLayout, setMenuLayout] = useState<'card' | 'grid' | 'list'>('card')
   const isManualScrollRef = useRef(false)
+  const lastScrollYRef = useRef(window.scrollY)
+  const lastUpdateTimeRef = useRef(Date.now())
 
   // Auto-select category on scroll
   useEffect(() => {
@@ -166,13 +169,27 @@ export default function MenuEditor() {
         return
       }
 
+      const currentScrollY = window.scrollY
+      const scrollDelta = Math.abs(currentScrollY - lastScrollYRef.current)
+      const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current
+
+      // Chỉ auto-select khi:
+      // 1. Scroll delta đáng kể (ít nhất 100px) HOẶC
+      // 2. Đã qua ít nhất 300ms kể từ lần update cuối (để tránh update khi click)
+      if (scrollDelta < 100 && timeSinceLastUpdate < 300) {
+        return // Không update nếu scroll quá nhỏ và quá nhanh (có thể do click/focus)
+      }
+      
+      lastScrollYRef.current = currentScrollY
+      lastUpdateTimeRef.current = Date.now()
+
       // Debounce the category update to avoid too frequent updates
       if (updateTimeout !== undefined) {
         window.clearTimeout(updateTimeout)
       }
       updateTimeout = window.setTimeout(() => {
         findActiveCategory()
-      }, 100) // Update after 100ms of no scrolling
+      }, 150) // Update after 150ms of no scrolling
     }
 
     // Initial check
@@ -321,13 +338,15 @@ export default function MenuEditor() {
       return
     }
 
+    // Tính toán currentItemIndex để sử dụng trong cả hai nhánh if-else
+    const sortedAllItems = [...currentCategory.items].sort((a, b) => a.position - b.position)
+    const currentItemIndex = sortedAllItems.findIndex(i => i.id === itemId)
+
     // Nếu cùng category và over là một item, swap positions
     if (currentCategory.id === targetCategoryId && targetItemId && targetItemId !== itemId) {
       const targetItem = currentCategory.items.find(i => i.id === targetItemId)
       if (targetItem) {
         // Sort tất cả items theo position để tìm index chính xác
-        const sortedAllItems = [...currentCategory.items].sort((a, b) => a.position - b.position)
-        const currentItemIndex = sortedAllItems.findIndex(i => i.id === itemId)
         const targetItemIndex = sortedAllItems.findIndex(i => i.id === targetItemId)
         
         // Nếu vị trí không thay đổi (kéo và thả vào chính vị trí cũ), không làm gì
@@ -508,8 +527,9 @@ export default function MenuEditor() {
       return
     }
 
-    // Update active category khi drag over
-    setActiveCategoryId(targetCategoryId)
+    // Không cập nhật activeCategoryId khi drag over để tránh menu category tự động chuyển
+    // Chỉ sử dụng overCategoryId để hiển thị visual feedback khi drag
+    // setActiveCategoryId(targetCategoryId)
 
     // Tìm category hiện tại của item đang được kéo
     const currentCategory = menu?.categories.find(cat => 
@@ -664,7 +684,44 @@ export default function MenuEditor() {
                 {restaurant?.name} - {t('restaurant.menu')}
               </h1>
             </div>
-            <LanguageThemeSwitcher />
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 border-r border-gray-300 dark:border-gray-600 pr-3 mr-3">
+                <button
+                  onClick={() => setMenuLayout('card')}
+                  className={`p-2 rounded transition-colors ${
+                    menuLayout === 'card'
+                      ? 'bg-indigo-600 text-white dark:bg-indigo-500'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                  title={language === 'vi' ? 'Chế độ thẻ' : 'Card View'}
+                >
+                  <Square className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setMenuLayout('grid')}
+                  className={`p-2 rounded transition-colors ${
+                    menuLayout === 'grid'
+                      ? 'bg-indigo-600 text-white dark:bg-indigo-500'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                  title={language === 'vi' ? 'Chế độ lưới' : 'Grid View'}
+                >
+                  <LayoutGrid className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setMenuLayout('list')}
+                  className={`p-2 rounded transition-colors ${
+                    menuLayout === 'list'
+                      ? 'bg-indigo-600 text-white dark:bg-indigo-500'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                  title={language === 'vi' ? 'Chế độ danh sách' : 'List View'}
+                >
+                  <List className="w-5 h-5" />
+                </button>
+              </div>
+              <LanguageThemeSwitcher />
+            </div>
           </div>
         </div>
       </nav>
@@ -696,7 +753,7 @@ export default function MenuEditor() {
                     }
                   }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                    activeCategoryId === category.id || overCategoryId === category.id
+                    activeCategoryId === category.id
                       ? 'bg-yellow-600 text-white dark:bg-yellow-500'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
@@ -778,6 +835,7 @@ export default function MenuEditor() {
                 overCategoryId={overCategoryId}
                 insertionIndex={insertionIndex}
                 categoryHeights={categoryHeights}
+                menuLayout={menuLayout}
                 />
                 ))
               ) : (
@@ -954,6 +1012,7 @@ function CategorySection({
   overCategoryId,
   insertionIndex,
   categoryHeights,
+  menuLayout,
 }: {
   category: Category
   categoryIndex: number
@@ -975,6 +1034,7 @@ function CategorySection({
   overCategoryId: number | null
   insertionIndex: number | null
   categoryHeights: Record<number, number>
+  menuLayout: 'card' | 'grid' | 'list'
 }) {
   const { t } = useI18n()
   const [categoryName, setCategoryName] = useState(category.name)
@@ -1062,7 +1122,13 @@ function CategorySection({
 
       <div
         id={`category-${category.id}`}
-        className={`grid grid-cols-1 gap-4 sm:grid-cols-2 min-h-[100px] p-4 border-2 border-dashed rounded-lg transition-colors items-stretch ${
+        className={`${
+          menuLayout === 'list' 
+            ? 'space-y-3 p-4' 
+            : menuLayout === 'grid'
+            ? 'grid grid-cols-2 gap-2 sm:grid-cols-4 p-4'
+            : 'grid grid-cols-1 gap-4 sm:grid-cols-2 p-4'
+        } min-h-[100px] border-2 border-dashed rounded-lg transition-colors items-stretch ${
           isOver 
             ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/10' 
             : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
@@ -1091,6 +1157,7 @@ function CategorySection({
                   onDelete={() => onDeleteItem(item.id)}
                   onToggleAvailability={() => onToggleAvailability(item)}
                   isDragging={activeItemId === item.id}
+                  menuLayout={menuLayout}
                 />
               </div>
             </div>
@@ -1128,6 +1195,7 @@ function SortableItemCard({
   onDelete,
   onToggleAvailability,
   isDragging,
+  menuLayout,
 }: {
   item: Item
   editing: boolean
@@ -1137,6 +1205,7 @@ function SortableItemCard({
   onDelete: () => void
   onToggleAvailability: () => void
   isDragging: boolean
+  menuLayout: 'card' | 'grid' | 'list'
 }) {
   const {
     attributes,
@@ -1163,6 +1232,7 @@ function SortableItemCard({
         onDelete={onDelete}
         onToggleAvailability={onToggleAvailability}
         dragHandleProps={listeners}
+        menuLayout={menuLayout}
       />
     </div>
   )
@@ -1177,6 +1247,7 @@ function ItemCard({
   onDelete,
   onToggleAvailability,
   dragHandleProps,
+  menuLayout = 'card',
 }: {
   item: Item
   editing: boolean
@@ -1186,6 +1257,7 @@ function ItemCard({
   onDelete: () => void
   onToggleAvailability: () => void
   dragHandleProps?: any
+  menuLayout?: 'card' | 'grid' | 'list'
 }) {
   const { t, language } = useI18n()
   const { currency, formatCurrency } = useCurrency()
@@ -1390,12 +1462,89 @@ function ItemCard({
     )
   }
 
+  if (menuLayout === 'list') {
+    // List View Layout
+    return (
+      <div
+        className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden bg-white dark:bg-gray-800 flex items-start gap-4 p-4"
+      >
+        {item.image_url && (
+          <div 
+            className="relative flex-shrink-0"
+            {...(dragHandleProps || {})}
+            style={dragHandleProps ? { cursor: 'grab' } : {}}
+          >
+            <img
+              src={item.image_url}
+              alt={item.name}
+              className="w-20 h-20 object-cover rounded"
+            />
+            {item.status === 'new' && (
+              <div className="absolute -top-1 -right-1 z-30">
+                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400 rotating-star sparkle-star" />
+              </div>
+            )}
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <h4 className="font-semibold text-gray-900 dark:text-white flex-1">{item.name}</h4>
+            <div className="flex items-center space-x-2 ml-2">
+              <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                {formatCurrency(item.price)}
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEdit()
+                }}
+                className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-300"
+              >
+                <Edit className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDelete()
+                }}
+                className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          {item.description && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">{item.description}</p>
+          )}
+          <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400">
+            {item.status !== 'coming_soon' && item.status !== 'out_of_stock' && item.quantity !== undefined && item.quantity !== null && (
+              <span>
+                {language === 'vi' ? 'Số lượng' : 'Quantity'}: {item.quantity}
+              </span>
+            )}
+            {item.status && (
+              <span>
+                {language === 'vi' ? 'Trạng thái' : 'Status'}: {
+                  item.status === 'in_stock' ? (language === 'vi' ? 'Còn hàng' : 'In Stock') :
+                  item.status === 'out_of_stock' ? (language === 'vi' ? 'Hết hàng' : 'Out of Stock') :
+                  item.status === 'new' ? (language === 'vi' ? 'Mới' : 'New') :
+                  item.status === 'coming_soon' ? (language === 'vi' ? 'Sắp có' : 'Coming Soon') : item.status
+                }
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Card/Grid View Layout
   return (
     <div
       className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden bg-white dark:bg-gray-800 h-full flex flex-col"
     >
       <div 
-        className={`relative h-48 flex-shrink-0 bg-gray-100 dark:bg-gray-700 ${dragHandleProps ? 'cursor-grab active:cursor-grabbing' : ''}`}
+        className={`relative ${menuLayout === 'grid' ? 'h-24' : 'h-48'} flex-shrink-0 bg-gray-100 dark:bg-gray-700 ${dragHandleProps ? 'cursor-grab active:cursor-grabbing' : ''}`}
         {...(dragHandleProps || {})}
       >
         {item.image_url ? (

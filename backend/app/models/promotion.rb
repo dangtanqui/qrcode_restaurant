@@ -20,3 +20,7 @@ class Promotion < ApplicationRecord
   end
 end
 
+
+
+
+

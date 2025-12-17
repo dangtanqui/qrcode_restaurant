@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_12_14_123921) do
+ActiveRecord::Schema[7.1].define(version: 2025_12_15_000001) do
   create_table "active_storage_attachments", charset: "utf8mb4", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -116,6 +116,22 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_14_123921) do
     t.index ["status"], name: "index_orders_on_status"
   end
 
+  create_table "promotions", charset: "utf8mb4", force: :cascade do |t|
+    t.bigint "restaurant_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.string "discount_type", null: false
+    t.decimal "discount_value", precision: 10, scale: 2, null: false
+    t.decimal "min_order_amount", precision: 10, scale: 2
+    t.decimal "max_discount_amount", precision: 10, scale: 2
+    t.date "start_date", null: false
+    t.date "end_date", null: false
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["restaurant_id"], name: "index_promotions_on_restaurant_id"
+  end
+
   create_table "restaurants", charset: "utf8mb4", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "name", null: false
@@ -178,6 +194,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_14_123921) do
   add_foreign_key "order_items", "items"
   add_foreign_key "order_items", "orders"
   add_foreign_key "orders", "restaurants"
+  add_foreign_key "promotions", "restaurants"
   add_foreign_key "restaurants", "users"
   add_foreign_key "reviews", "restaurants"
   add_foreign_key "reviews", "reviews", column: "parent_id"

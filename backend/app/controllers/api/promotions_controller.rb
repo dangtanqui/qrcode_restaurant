@@ -93,3 +93,7 @@ class Api::PromotionsController < ApplicationController
   end
 end
 
+
+
+
+
